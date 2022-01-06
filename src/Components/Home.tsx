@@ -27,7 +27,7 @@ export default function Home()
     async function saveAction() {
         setIsLoading(true);
         try {
-            if (!textAreaRef.current?.value?.replaceAll(' ', '')) return;
+            if (!textAreaRef.current?.value?.replace(/ /g, '')) return;
             const paste = await savePaste(textAreaRef.current!.value);
             navigate(buildPasteUri(paste));
         } catch (e) {
@@ -55,7 +55,7 @@ export default function Home()
             {styles}
             <textarea ref={textAreaRef} spellCheck='false' placeholder='Paste your code here' onKeyDown={keyDown} />
             <Fab color="primary" aria-label="save" sx={{position: 'fixed', bottom: '16px', right: '16px'}} onClick={isLoading ? () => {} : saveAction}>
-                {isLoading ? <CircularProgress sx={{color: '#000000'}} size={24} /> : <Icon>save</Icon>}
+                {isLoading ? <CircularProgress sx={{color: '#000000'}} size="1.5rem" /> : <Icon>save</Icon>}
             </Fab>
             <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
                 <Alert severity="error">

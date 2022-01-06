@@ -8,8 +8,8 @@ export interface Paste extends UploadedPaste {
 }
 
 function getDatabase(): Database {
-    // if ('indexedDB' in window) return new IndexedDb();
-    if ('localStorage' in window) return new LocalStorage();
+    if (IndexedDb.isAvailable()) return new IndexedDb();
+    if (LocalStorage.isAvailable()) return new LocalStorage();
     throw new Error('No supported database backend.');
 }
 

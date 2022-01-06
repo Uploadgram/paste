@@ -15,7 +15,7 @@ export default function MyPastes()
     const [pastes, setPastes] = useState<Paste[]|null>(null);
     const navigate = useNavigate();
     function reloadPastes() {
-        database.fetchPastes().then(setPastes);
+        database.fetchPastes().then((pastes) => setPastes(pastes.reverse()));
     }
     useEffect(reloadPastes, []);
     return pastes === null ? null
@@ -37,7 +37,7 @@ export default function MyPastes()
                             <IconButton onClick={() => window.open(buildPasteUri(paste))}>
                                 <Icon>open_in_new</Icon>
                             </IconButton>
-                            <CopyButton text={document.location.origin + '/' + paste.downloadId} />
+                            <CopyButton text={document.location.origin + buildPasteUri(paste)} />
                             <LoadingButton onClick={() => api.deletePaste(paste.token).finally(reloadPastes)}>
                                 <Icon>delete</Icon>
                             </LoadingButton>

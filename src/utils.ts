@@ -24,7 +24,7 @@ export const languageAliases = {
 };
 
 export function base64ToUrl(base64: string): string {
-    return base64.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', ''); // remove padding
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); // remove padding
 }
 
 export function urlToBase64(base64Url: string): string {

@@ -67,15 +67,16 @@ export async function savePaste(
         key,
         encoded
     );
-    const parcel = new Blob([iv, new Uint8Array(encryptedMessage)]);
+    const parcel = new Blob([iv, encryptedMessage]);
     const res = await fetch(apiEndpoint + 'upload', {
         method: 'PUT',
         body: parcel,
         headers: {
-            'content-type': 'text/plain',
+            'content-type': 'application/octet-stream',
             'upload-filename': filename,
         },
     });
+    if (res.status !== 201) throw new UploadFailedError();
     const json: UploadResponse = await res.json();
     if (!json.ok) throw new UploadFailedError();
     const exportedKey = await crypto.subtle.exportKey('raw', key);
@@ -113,16 +114,6 @@ export async function fetchPaste(
     downloadId: string,
     key: string | ArrayBuffer | Uint8Array
 ): Promise<string | null> {
-    const info = await getFileInfo(downloadId);
-    if (info.size > maxSize) return null;
-    const res = await fetch(downloadEndpoint + downloadId + '?raw');
-    if (res.status === 404) throw new FileNotFoundError();
-    const arrayBuffer = new Uint8Array(await res.arrayBuffer());
-    if (arrayBuffer.byteLength < 29) {
-        throw new Error('Parcel is less than 29 bytes');
-    }
-    const iv = arrayBuffer.slice(0, 12);
-    const encryptedMessage = arrayBuffer.slice(12);
     if (typeof key === 'string') {
         key = decode(urlToBase64(key));
     }
@@ -136,6 +127,18 @@ export async function fetchPaste(
         true,
         ['encrypt', 'decrypt']
     );
+    const info = await getFileInfo(downloadId);
+    if (info.size > maxSize) return null;
+    if (info.size < 29) {
+        throw new Error('Parcel is less than 29 bytes');
+    }
+    const res = await fetch(downloadEndpoint + downloadId + '?raw');
+
+    if (res.status === 404) throw new FileNotFoundError();
+    const arrayBuffer = new Uint8Array(await res.arrayBuffer());
+    const iv = arrayBuffer.slice(0, 12);
+    const encryptedMessage = arrayBuffer.slice(12);
+
     const decryptedBuffer: ArrayBuffer = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: iv },
         importedKey,

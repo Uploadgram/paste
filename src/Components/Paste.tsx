@@ -32,7 +32,7 @@ export default function Paste()
             console.error(error);
             setError((error as any).toString())
         });
-    }, []);
+    }, [downloadId]);
     return content === undefined ? error !== null ? (<Box sx={{flexGrow: 1, display: 'flex', flexFlow: 'column', justifyContent: 'center', alignItems: 'center'}}>
         <Icon sx={{fontSize: '3.5rem', marginBottom: '16px'}}>error</Icon>
         <Typography variant="h5">
