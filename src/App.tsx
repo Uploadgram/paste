@@ -1,12 +1,15 @@
 
-import PastegramAppBar from './Components/PastegramAppBar';
 import {Routes, Route} from 'react-router-dom';
-import Home from './Components/Home';
-import MyPastes from './Components/MyPastes';
-import Paste from './Components/Paste';
 import NotFound from './Components/NotFound';
 import { GlobalStyles } from '@mui/styled-engine';
 import { blue } from '@mui/material/colors';
+import { lazy, Suspense } from 'react';
+import { Box, CircularProgress } from '@mui/material';
+import PastegramAppBar from './Components/PastegramAppBar';
+
+const Home = lazy(() => import('./Components/Home'));
+const MyPastes = lazy(() => import('./Components/MyPastes'));
+const Paste = lazy(() => import('./Components/Paste'));
 
 const styles = <GlobalStyles styles={{
     'a': {color: blue[400], textDecoration: 'none'},
@@ -16,16 +19,40 @@ const styles = <GlobalStyles styles={{
 
 export default function App()
 {
+    // re-render the app bar in each different component for optional custom actions
     return (
         <>
             {styles}
-            <PastegramAppBar />
             <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/my-pastes" element={<MyPastes />} />
-                <Route path="/:id" element={<Paste />} />
-                <Route path="*" element={<NotFound type="page" />} />
+                <Route path="/" element={
+                    <Suspense fallback={LoadingScreen}>
+                        <Home />
+                    </Suspense>
+                } />
+                <Route path="/my-pastes" element={
+                    <Suspense fallback={LoadingScreen}>
+                        <MyPastes />
+                    </Suspense>
+                } />
+                <Route path="/:id" element={
+                    <Suspense fallback={LoadingScreen}>
+                        <Paste />
+                    </Suspense>
+                }/>
+                <Route path="*" element={<>
+                    <PastegramAppBar />
+                    <NotFound type="page" />
+                </>} />
             </Routes>
         </>
     );
+}
+
+function LoadingScreen() {
+    return <>
+        <PastegramAppBar />
+        <Box sx={{flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+            <CircularProgress />
+        </Box>
+    </>;
 }

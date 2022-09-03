@@ -1,11 +1,12 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
+import PastegramAppBar from "./PastegramAppBar";
 
 
 export default function NotFound({type}: {type: "file" | "page"})
 {
     const navigate = useNavigate();
-    return (
+    return <>
         <Box sx={{flexGrow: 1, display: 'flex', flexFlow: 'column', justifyContent: 'center', alignItems: 'center'}}>
             <Typography variant="h1">
                 404
@@ -15,5 +16,5 @@ export default function NotFound({type}: {type: "file" | "page"})
             </Typography>
             <Button variant="text" onClick={() => navigate('/')} sx={{marginTop: '28px'}}>MAKE A NEW PASTE</Button>
         </Box>
-    )
+    </>;
 }

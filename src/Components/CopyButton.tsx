@@ -1,6 +1,6 @@
 import { Icon, IconButton, Snackbar, Alert } from "@mui/material";
 import { useState } from "react";
-import { copyText } from "../../utils";
+import { copyText } from "../utils";
 
 export default function CopyButton({text}: {text: string}) {
     const [success, setSuccess] = useState<boolean | null>(null);

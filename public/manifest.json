@@ -1,25 +1,30 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Pastegram",
+  "name": "Pastegram",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "icons/pastegram-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     },
     {
-      "src": "logo192.png",
+      "src": "icons/pastegram-logo-256.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "256x256"
     },
     {
-      "src": "logo512.png",
+      "src": "images/pastegram-logo-128.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "128x128"
+    },
+    {
+      "src": "icons/pastegram-logo-64.png",
+      "type": "image/png",
+      "sizes": "64x64"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#3498db",
+  "background_color": "#121212"
 }

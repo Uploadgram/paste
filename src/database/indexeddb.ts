@@ -1,37 +1,35 @@
+import { DBSchema, IDBPDatabase, openDB } from 'idb';
 import { Paste } from '.';
 import { UploadedPaste } from '../api';
 import { Database } from './abstract';
 
+interface PastesSchema extends DBSchema {
+    pastes: {
+        value: Paste;
+        key: number;
+        indexes: { token: string; downloadId: string };
+    };
+}
+
 export default class IndexedDb extends Database {
-    db: IDBDatabase | undefined;
-    databasePromise: Promise<void>;
+    db: IDBPDatabase<PastesSchema> | undefined;
+    databasePromise: Promise<any>;
 
     constructor() {
         super();
-
-        this.databasePromise = new Promise<void>((resolve, reject) => {
-            let request = window.indexedDB.open('pastes', 1);
-            request.addEventListener('blocked', () => {
-                reject(new Error('IndexedDB request blocked.'));
-            });
-            request.addEventListener('upgradeneeded', () => {
-                this.db = request.result;
-                var store = this.db.createObjectStore('pastes', {
-                    keyPath: 'token',
+        this.databasePromise = openDB<PastesSchema>('pastes', 1, {
+            upgrade: (db) => {
+                this.db = db;
+                var store = db.createObjectStore('pastes', {
+                    keyPath: 'index',
+                    autoIncrement: true,
                 });
                 store.createIndex('token', 'token', { unique: true });
                 store.createIndex('downloadId', 'downloadId', {
                     unique: true,
                 });
-                store.createIndex('codePreview', 'codePreview');
-                store.createIndex('key', 'key');
-            });
-            request.addEventListener('success', () => {
-                this.db = request.result;
-                resolve();
-            });
-            request.addEventListener('error', () => reject(request.error));
-        });
+            },
+        }).then((db) => (this.db = db));
     }
 
     waitForDatabaseReady(): Promise<void> {
@@ -42,73 +40,62 @@ export default class IndexedDb extends Database {
         return new Promise<void>(async (resolve) => {
             await this.waitForDatabaseReady();
             var transaction = this.db!.transaction('pastes', 'readwrite');
-            var store = transaction.objectStore('pastes');
-            transaction.addEventListener('complete', () => resolve());
-            store.add({ ...paste, codePreview });
-            transaction.commit();
+            await transaction.store.add({ ...paste, codePreview });
+            await transaction.done;
         });
     }
 
-    removePaste(token: string): Promise<void> {
-        return new Promise<void>(async (resolve) => {
-            await this.waitForDatabaseReady();
-            var transaction = this.db!.transaction('pastes', 'readwrite');
-            var store = transaction.objectStore('pastes');
-            transaction.addEventListener('complete', () => resolve());
-            store.delete(token);
-        });
-    }
-
-    fetchPaste(id: string, isDownloadId: boolean = false): Promise<Paste> {
-        return new Promise<Paste>(async (resolve, reject) => {
-            await this.waitForDatabaseReady();
-            var transaction = this.db!.transaction('pastes', 'readonly');
-            var store = transaction.objectStore('pastes');
-            var req: IDBRequest;
-            if (isDownloadId) {
-                var index = store.index('downloadId');
-                req = index.get(id);
-            } else {
-                req = store.get(id);
+    async removePaste(token: string | number): Promise<void> {
+        await this.waitForDatabaseReady();
+        const transaction = this.db!.transaction('pastes', 'readwrite');
+        var index;
+        if (typeof token === 'number') {
+            index = token;
+        } else {
+            index = await transaction.store.index('token').getKey(token);
+            if (index === undefined) {
+                console.log('key not found');
+                return;
             }
-            req.addEventListener('success', () => resolve(req.result));
-            req.addEventListener('error', () => reject(req.error));
-        });
+        }
+        await transaction.store.delete(index);
+        await transaction.done;
     }
 
-    fetchPastes(): Promise<Paste[]> {
-        return new Promise<Paste[]>(async (resolve, reject) => {
-            await this.waitForDatabaseReady();
-            var transaction = this.db!.transaction('pastes', 'readonly');
-            var store = transaction.objectStore('pastes');
-            var req = store.openCursor();
-            var pastes: Paste[] = [];
-            req.addEventListener('success', function () {
-                var cursor = this.result;
-                if (cursor === null) return resolve(pastes);
-                pastes.push(cursor.value as Paste);
-                cursor.continue();
-            });
-            req.addEventListener('error', () => reject(req.error));
-        });
+    async fetchPaste(
+        id: string,
+        isDownloadId: boolean = false
+    ): Promise<Paste | undefined> {
+        await this.waitForDatabaseReady();
+        const transaction = this.db!.transaction('pastes', 'readonly');
+        if (isDownloadId) {
+            return await transaction.store.index('downloadId').get(id);
+        } else {
+            return await transaction.store.index('token').get(id);
+        }
     }
 
-    hasPaste(id: string, isDownloadId: boolean): Promise<boolean> {
-        return new Promise<boolean>(async (resolve, reject) => {
-            await this.waitForDatabaseReady();
+    async fetchPastes(): Promise<Paste[]> {
+        await this.waitForDatabaseReady();
+        const transaction = this.db!.transaction('pastes', 'readonly');
+        var cursor = await transaction.store.openCursor();
+        var pastes: Paste[] = [];
+        while (cursor !== null) {
+            pastes.push(cursor.value);
+            cursor = await cursor.continue();
+        }
+        return pastes;
+    }
 
-            var transaction = this.db!.transaction('pastes', 'readonly');
-            var store = transaction.objectStore('pastes');
-            var req: IDBRequest<number>;
-            if (isDownloadId) {
-                var index = store.index('downloadId');
-                req = index.count(id);
-            } else {
-                req = store.count(id);
-            }
-            req.addEventListener('success', () => resolve(req.result > 0));
-            req.addEventListener('error', () => reject(req.error));
-        });
+    async hasPaste(id: string, isDownloadId: boolean): Promise<boolean> {
+        await this.waitForDatabaseReady();
+        const transaction = this.db!.transaction('pastes', 'readonly');
+
+        if (isDownloadId) {
+            return (await transaction.store.index('downloadId').count(id)) > 0;
+        } else {
+            return (await transaction.store.index('token').count(id)) > 0;
+        }
     }
 
     static isAvailable(): boolean {

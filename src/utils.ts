@@ -21,6 +21,7 @@ export const languageAliases = {
     txt: 'text',
     js: 'javascript',
     md: 'markdown',
+    py: 'python',
 };
 
 export function base64ToUrl(base64: string): string {

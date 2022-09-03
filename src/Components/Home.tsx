@@ -1,8 +1,9 @@
 import { CircularProgress, Fab, GlobalStyles, Icon, Alert, AlertTitle, Snackbar } from "@mui/material";
-import React, { createRef, useState } from "react";
+import React, { createRef, useEffect, useState } from "react";
 import { savePaste, UploadFailedError } from "../api";
 import { buildPasteUri } from "../utils";
 import { useNavigate } from 'react-router-dom';
+import PastegramAppBar from "./PastegramAppBar";
 
 const styles = <GlobalStyles styles={{ textarea: {
     flexGrow: 1,
@@ -23,6 +24,12 @@ export default function Home()
     const [error, setError] = useState<string|null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
     const textAreaRef = createRef<HTMLTextAreaElement>();
+    let isMounted = true;
+    useEffect(() => {
+        return () => {
+            isMounted = false;
+        }
+    }, []);
 
     async function saveAction() {
         setIsLoading(true);
@@ -32,11 +39,13 @@ export default function Home()
             navigate(buildPasteUri(paste));
         } catch (e) {
             setSnackbarOpen(true);
-            setIsLoading(false);
             if (e instanceof UploadFailedError) return setError(e.message);
             if (e instanceof Error) return setError(e.name + ': ' + e.message);
             setError((e as any).toString());
+        } finally {
+            if (isMounted) setIsLoading(false);
         }
+        
     }
 
     function keyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) 
@@ -52,9 +61,10 @@ export default function Home()
 
     return (
         <>
+            <PastegramAppBar />
             {styles}
             <textarea ref={textAreaRef} spellCheck='false' placeholder='Paste your code here' onKeyDown={keyDown} />
-            <Fab color="primary" aria-label="save" sx={{position: 'fixed', bottom: '16px', right: '16px'}} onClick={isLoading ? () => {} : saveAction}>
+            <Fab color="primary" aria-label="save" sx={{position: 'fixed', bottom: '16px', right: '16px'}} onClick={isLoading ? undefined : saveAction}>
                 {isLoading ? <CircularProgress sx={{color: '#000000'}} size="1.5rem" /> : <Icon>save</Icon>}
             </Fab>
             <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>

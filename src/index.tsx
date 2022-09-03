@@ -1,18 +1,21 @@
 import { CssBaseline, ThemeProvider } from "@mui/material";
-import React from "react";
-import ReactDOM from 'react-dom';
+import {StrictMode} from "react";
+import {render} from 'react-dom';
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { theme } from "./themes";
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
-ReactDOM.render(
-    <React.StrictMode>
+render(
+    <StrictMode>
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <BrowserRouter>
                 <App />
             </BrowserRouter>
         </ThemeProvider>
-    </React.StrictMode>,
+    </StrictMode>,
     document.getElementById('root')
 );
+
+serviceWorkerRegistration.register();

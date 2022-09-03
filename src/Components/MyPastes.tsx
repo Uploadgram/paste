@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import database, { Paste } from "../database";
 import * as api from '../api';
 import { buildPasteUri } from "../utils";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { darcula } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-async';
+import darcula from "react-syntax-highlighter/dist/esm/styles/prism/darcula";
 import { Link, useNavigate } from "react-router-dom";
-import LoadingButton from "./MyPastes/LoadingButton";
-import CopyButton from './MyPastes/CopyButton';
+import LoadingButton from "./LoadingButton";
+import CopyButton from './CopyButton';
+import PastegramAppBar from "./PastegramAppBar";
 
 export default function MyPastes()
 {
@@ -18,7 +19,9 @@ export default function MyPastes()
         database.fetchPastes().then((pastes) => setPastes(pastes.reverse()));
     }
     useEffect(reloadPastes, []);
-    return pastes === null ? null
+    return <>
+    <PastegramAppBar />
+    {pastes === null ? null
     : pastes.length === 0 ? (
         <Box sx={{flexGrow: 1, display: 'flex', flexFlow: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', margin: '16px'}}>
             <Icon sx={{fontSize: '3.5rem', marginBottom: '16px'}}>heart_broken</Icon>
@@ -26,7 +29,7 @@ export default function MyPastes()
                 No pastes have been found, <Link to="/">make a new one now</Link>!
             </Typography>
         </Box>
-    ) : (<Box>
+        ) : <Box>
             {pastes.map((paste, i) => (
                 <Card key={i}>
                     <CardContent sx={{position: 'relative'}}>
@@ -34,9 +37,10 @@ export default function MyPastes()
                             <IconButton onClick={() => navigate(buildPasteUri(paste))}>
                                 <Icon>open_in_browser</Icon>
                             </IconButton>
-                            <IconButton onClick={() => window.open(buildPasteUri(paste))}>
-                                <Icon>open_in_new</Icon>
-                            </IconButton>
+                            {'share' in navigator ?
+                            <IconButton onClick={() => navigator.share({text: buildPasteUri(paste)})}>
+                                <Icon>share</Icon>
+                            </IconButton> : null}
                             <CopyButton text={document.location.origin + buildPasteUri(paste)} />
                             <LoadingButton onClick={() => api.deletePaste(paste.token).finally(reloadPastes)}>
                                 <Icon>delete</Icon>
@@ -49,5 +53,6 @@ export default function MyPastes()
                     <Divider />
                 </Card>
             ))}
-        </Box>);
+        </Box>}
+    </>;
 }
